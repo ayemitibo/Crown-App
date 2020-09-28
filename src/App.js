@@ -1,53 +1,56 @@
-import React, {Component} from 'react';
-import { Switch, Route } from 'react-router-dom';
+import React, { Component } from "react";
+import { Switch, Route } from "react-router-dom";
 
-import './App.css';
+import "./App.css";
 
-import HomePage from './pages/homepage/homepage.component';
-import ShopPage from './pages/shop/shop.component.jsx';
+import HomePage from "./pages/homepage/homepage.component";
+import ShopPage from "./pages/shop/shop.component.jsx";
 import SignInAndSignUp from "./pages/sign-in-and-sign-up/sign-in-and-sign-up.jsx";
-import Header from './components/header/header.component.jsx';
-import { auth,createCreateUserProfileDocument } from "./firebase/firebase.utils";
+import Header from "./components/header/header.component.jsx";
+import {
+  auth,
+  createCreateUserProfileDocument,
+} from "./firebase/firebase.utils";
 
 class App extends Component {
-  constructor(){
-    super()
+  constructor() {
+    super();
     this.state = {
-      currentUser : null
-    }
+      currentUser: null,
+    };
   }
 
-  unsubscribeFromAuth = null
+  unsubscribeFromAuth = null;
 
-componentDidMount(){
+  componentDidMount() {
+    this.unsubscribeFromAuth = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        const userRef = await createCreateUserProfileDocument(user);
+        userRef.onSnapshot((snapshot) => {
+          this.setState({
+            currentUser: {
+              id: snapshot.id,
+              ...snapshot.data(),
+            },
+          });
+        });
+      }
+      this.setState({ currentUser: user });
+    });
+  }
 
-  this.unsubscribeFromAuth =  auth.onAuthStateChanged(async user => {
-    if(user){
-      const userRef = await createCreateUserProfileDocument(user)
+  componentWillUnmount() {
+    this.unsubscribeFromAuth();
+  }
 
-      userRef.onSnapshot(snapshot => {
-        this.setState({currentUser : {
-          id: snapshot.id,
-          ...snapshot.data()
-        }})
-      })
-    }
-    this.setState({currentUser : user})
-  })
-}
-
-componentWillUnmount(){
-  this.unsubscribeFromAuth()
-}
-
-  render(){
+  render() {
     return (
       <div>
         <Header currentUser={this.state.currentUser} />
         <Switch>
-          <Route exact path='/' component={HomePage} />
-          <Route path='/shop' component={ShopPage} />
-          <Route path='/signin' component={SignInAndSignUp} />
+          <Route exact path="/" component={HomePage} />
+          <Route path="/shop" component={ShopPage} />
+          <Route path="/signin" component={SignInAndSignUp} />
         </Switch>
       </div>
     );
